@@ -4,6 +4,7 @@ import { InjectModel } from "@nestjs/sequelize";
 import { User } from "./user.model";
 import { HashGenerator } from "src/utils/crypto/crypto";
 import { BadRequestException, InternalServerErrorException, NotFoundException } from "@nestjs/common";
+import { Blog } from "src/blog/blog.model";
 
 
 
@@ -19,18 +20,26 @@ export class UserService {
     }
 
     public async allUsers(): Promise<User[]> {
-        return await this.userModel.findAll();
+        return await this.userModel.findAll({"include": [Blog]});
     }
 
     public async findUserByEmail(email: string): Promise<User> {
-        const targetUser = await this.userModel.findOne({"where": {email}});
+        const targetUser = await this.userModel.findOne({"where": {email}, include: [Blog]});
         return targetUser || null;
     }
 
 
     public async findUserById(id: number): Promise<User> {
-        const targetUser = await this.userModel.findByPk(id);
+        const targetUser = await this.userModel.findByPk(id, {include: [Blog]});
         return targetUser || null;
+    }
+
+
+    public async changeUsername(id: number, newUsername: string) {
+        const result = await this.userModel.update({"username": newUsername}, {
+            "where": { id }, returning: ['username', 'email', 'blogs']
+        });
+        return result[0];
     }
 
 

@@ -1,6 +1,6 @@
-import { AutoIncrement, Column, Model, PrimaryKey, Table, Unique } from "sequelize-typescript";
+import { AutoIncrement, Column, Model, PrimaryKey, Table, Unique, HasMany } from "sequelize-typescript";
 import { CreateUserDto } from "./user.dto";
-
+import { Blog } from "src/blog/blog.model";
 
 @Table
 export class User extends Model<User, CreateUserDto> {
@@ -18,4 +18,8 @@ export class User extends Model<User, CreateUserDto> {
 
     @Column
     public username: string;
+
+
+    @HasMany(() => Blog)
+    public blogs: Blog[]
 }

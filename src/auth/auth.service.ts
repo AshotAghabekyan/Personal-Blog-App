@@ -6,6 +6,7 @@ import { NotFoundException } from "@nestjs/common";
 import { HashGenerator } from "src/utils/crypto/crypto";
 import { JwtService } from "@nestjs/jwt";
 
+
 @Injectable()
 export class AuthService {
     private readonly userService: UserService;
