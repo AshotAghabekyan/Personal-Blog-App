@@ -1,5 +1,4 @@
 import * as bcrypt from "bcrypt";
-import * as crypto from "node:crypto";
 
 
 export class HashGenerator {

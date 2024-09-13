@@ -1,6 +1,5 @@
 import { Model, Column, PrimaryKey, AutoIncrement, ForeignKey, BelongsTo, Table } from "sequelize-typescript";
-import { CreateBlogDto } from "./blog.dto";
-import { User } from "src/user/user.model";
+import { User } from "src/modules/user/model/user.model";
 
 
 export interface BlogCreationAttributes {

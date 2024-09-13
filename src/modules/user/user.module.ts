@@ -1,7 +1,7 @@
 import { Module } from "@nestjs/common/decorators/modules/module.decorator";
 import { UserService } from "./user.service";
 import { UserController } from "./user.controller";
-import { User } from "./user.model";
+import { User } from "./model/user.model";
 import { SequelizeModule } from "@nestjs/sequelize/dist/sequelize.module";
 import { JwtModule } from "@nestjs/jwt";
 

@@ -1,8 +1,10 @@
 
 import { Controller } from "@nestjs/common/decorators/core/controller.decorator";
-import { Post, Get, Body, HttpCode, HttpStatus, UseGuards } from "@nestjs/common";
-import { LoginDto } from "./auth.dto";
+import { Post, Body, HttpCode } from "@nestjs/common/decorators/http";
+import {HttpStatus} from "@nestjs/common/enums/http-status.enum"
+import { LoginDto } from "./model/auth.dto";
 import { AuthService } from "./auth.service";
+
 
 @Controller("/auth")
 export class AuthController {

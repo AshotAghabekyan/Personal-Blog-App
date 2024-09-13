@@ -1,7 +1,12 @@
-import { CanActivate, ExecutionContext, Injectable, UnauthorizedException } from "@nestjs/common";
-import { ConfigService } from "@nestjs/config";
-import { JwtService } from "@nestjs/jwt";
+import { Injectable } from "@nestjs/common/decorators/core/injectable.decorator";
+import { CanActivate } from "@nestjs/common/interfaces/features/can-activate.interface";
+import { ExecutionContext } from "@nestjs/common/interfaces/features/execution-context.interface";
+import { ConfigService } from "@nestjs/config/dist/config.service";
+import { UnauthorizedException } from "@nestjs/common/exceptions/unauthorized.exception";
+import { JwtService } from "@nestjs/jwt/dist/jwt.service";
 import { Request } from "express";
+import errorResponse from "src/config/errorResponse";
+
 
 
 @Injectable()
@@ -25,12 +30,12 @@ export class AuthGuard implements CanActivate {
     private async validateRequest(request: Request): Promise<boolean> {
         const authHeader: string = request.headers.authorization;
         if (!authHeader) {
-            throw new UnauthorizedException('authentication token required!');
+            throw new UnauthorizedException(errorResponse.missed_token);
         }
 
         const [authType, token] = authHeader.split(" ");
         if (authType.toLowerCase() != 'bearer' || !token) {
-            throw new UnauthorizedException('invalid credentials!');
+            throw new UnauthorizedException(errorResponse.invalid_credentials);
         }
 
         try {
@@ -40,7 +45,6 @@ export class AuthGuard implements CanActivate {
             return true;
         }
         catch(error) {
-            console.log('error', error);
             console.log(error);
             throw new UnauthorizedException(error);
         }

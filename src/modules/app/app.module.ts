@@ -1,14 +1,19 @@
 import { Module } from '@nestjs/common/decorators/modules/module.decorator';
+import { SequelizeModule } from '@nestjs/sequelize/dist/sequelize.module';
+import {ConfigModule} from "@nestjs/config/dist/config.module"
+import { UserModule } from 'src/modules/user/user.module';
+import { AuthModule } from 'src/modules/auth/auth.module';
+import { BlogModule } from 'src/modules/blog/blog.module';
+
 import { AppController } from './app.controller';
+
 import { AppService } from './app.service';
-import {ConfigModule, ConfigService} from "@nestjs/config"
-import { SequelizeModule } from '@nestjs/sequelize';
-import { UserModule } from 'src/user/user.module';
-import { AuthModule } from 'src/auth/auth.module';
-import { User } from 'src/user/user.model';
-import { Blog } from 'src/blog/blog.model';
+import {ConfigService} from "@nestjs/config/dist/config.service"
+
+import { User } from 'src/modules/user/model/user.model';
+import { Blog } from 'src/modules/blog/model/blog.model';
 import configuration from 'src/config/configuration';
-import { BlogModule } from 'src/blog/blog.module';
+
 
 @Module({
   

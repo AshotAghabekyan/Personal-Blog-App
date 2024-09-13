@@ -1,6 +1,6 @@
-import { Controller, Get,  } from '@nestjs/common/decorators/';
+import { Get } from '@nestjs/common/decorators/http';
+import {Controller} from "@nestjs/common/decorators/core/controller.decorator"
 import { AppService } from './app.service';
-import { ValidationPipe, UsePipes } from '@nestjs/common';
 
 
 @Controller()

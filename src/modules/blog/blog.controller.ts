@@ -1,10 +1,11 @@
 import { Controller } from "@nestjs/common/decorators/core/controller.decorator";
-import { BlogService } from "./blog.service";
-import { AuthGuard } from "src/auth/auth.guard";
-import { Body, Param, Req, Get, Post } from "@nestjs/common/decorators/http/";
-import { CreateBlogDto } from "./blog.dto";
-import { Request } from "express";
 import { UseGuards } from "@nestjs/common/decorators/core/use-guards.decorator";
+import { Body, Param, Req, Get, Post, HttpCode } from "@nestjs/common/decorators/http/";
+import { HttpStatus } from "@nestjs/common/enums/http-status.enum";
+import { BlogService } from "./blog.service";
+import { AuthGuard } from "src/modules/auth/auth.guard";
+import { CreateBlogDto } from "./model/blog.dto";
+import { Request } from "express";
 import { ParseIntPipe } from "@nestjs/common";
 
 
@@ -17,16 +18,17 @@ export class BlogController {
         this.blogService = blogService;
     }
 
+    @HttpCode(HttpStatus.CREATED)
     @UseGuards(AuthGuard)
     @Post('/')
     public createBlog(@Body() blogDto: CreateBlogDto, @Req() req: Request) {
-        console.log("request user", req['user']);
         const publisherId: number = req['user'].sub;
         return this.blogService.createBlog(blogDto, publisherId);
     };
 
 
     @UseGuards(AuthGuard)
+    @HttpCode(HttpStatus.OK)
     @Get("/:blogId")
     public getBlogById(@Param("blogId", ParseIntPipe) blogId: number) {
         return this.blogService.getBlogById(blogId);
@@ -34,13 +36,14 @@ export class BlogController {
 
 
     @UseGuards(AuthGuard)
-    @Get("/publisher")
-    public allBlogsOfUser(@Req() req: Request) {
-        const publisherId: number = req['user'].sub;
+    @HttpCode(HttpStatus.OK)
+    @Get("/publisher/:userId")
+    public allBlogsOfUser(@Param("userId", ParseIntPipe) publisherId: number) {
         return this.blogService.allBlogsOfUser(publisherId);
     };  
 
 
+    @HttpCode(HttpStatus.OK)
     @Get("/")
     public allBlogs() {
         return this.blogService.allBlogs();
@@ -48,9 +51,11 @@ export class BlogController {
 
 
     @UseGuards(AuthGuard)
+    @HttpCode(HttpStatus.OK)
     public deleteBlog(blogId: number) {};
 
 
     @UseGuards(AuthGuard)
+    @HttpCode(HttpStatus.CREATED)
     public editBlog() {};
 }

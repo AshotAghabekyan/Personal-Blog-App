@@ -1,10 +1,15 @@
 import { Injectable } from "@nestjs/common/decorators/core/injectable.decorator";
-import { UserService } from "src/user/user.service";
-import { LoginDto } from "./auth.dto";
-import { User } from "src/user/user.model";
-import { NotFoundException } from "@nestjs/common";
+import { NotFoundException } from "@nestjs/common/exceptions/not-found.exception";
+
+import { JwtService } from "@nestjs/jwt/dist/jwt.service";
+import { UserService } from "src/modules/user/user.service";
+
+import { LoginDto } from "./model/auth.dto";
+import { User } from "src/modules/user/model/user.model";
+
 import { HashGenerator } from "src/utils/crypto/crypto";
-import { JwtService } from "@nestjs/jwt";
+import errorResponse from "src/config/errorResponse";
+
 
 
 @Injectable()
@@ -23,12 +28,12 @@ export class AuthService {
         const existUser: User = await this.userService.findUserByEmail(dto.email);
         
         if (!existUser) {
-            throw new NotFoundException('invalid email or password');
+            throw new NotFoundException(errorResponse.invalid_login);
         }
 
         const isValidPassword: boolean = await this.hashGenerator.compareHashedData(dto.password, existUser.password);
         if (!isValidPassword) {
-            throw new NotFoundException("invalid email or password");
+            throw new NotFoundException(errorResponse.invalid_login);
         }
 
         const token = await this.jwtService.signAsync({sub: existUser.id, email: dto.email});

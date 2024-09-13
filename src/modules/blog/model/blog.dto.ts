@@ -1,4 +1,4 @@
-import { IsString } from "class-validator";
+import { IsString } from "class-validator/types/decorator/typechecker/IsString";
 
 
 export class CreateBlogDto {
