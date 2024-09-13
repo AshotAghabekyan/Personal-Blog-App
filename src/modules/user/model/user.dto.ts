@@ -1,4 +1,4 @@
-import { IsString, IsEmail, IsStrongPassword } from "class-validator/types";
+import { IsString, IsEmail, IsStrongPassword } from "class-validator";
 
 
 

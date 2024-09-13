@@ -14,7 +14,6 @@ import { ConfigModule, ConfigService } from "@nestjs/config";
             "imports": [ConfigModule],
             "inject": [ConfigService],
             useFactory: (configService: ConfigService) => {
-                console.log("secret in module ", configService.get("jwt_secret"));
                 return {
                     secret: configService.get<string>('jwt_secret')!,
                     global: true,
