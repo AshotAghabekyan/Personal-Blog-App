@@ -6,6 +6,7 @@ import { HashGenerator } from "src/utils/crypto/crypto";
 import { BadRequestException, InternalServerErrorException, NotFoundException } from "@nestjs/common";
 import { Blog } from "src/modules/blog/model/blog.model";
 import errorResponse from "src/config/errorResponse";
+import { Reaction } from "../reaction/model/reaction.model";
 
 
 @Injectable()
@@ -37,7 +38,7 @@ export class UserService {
 
     public async changeUsername(id: number, newUsername: string) {
         const result = await this.userModel.update({"username": newUsername}, {
-            "where": { id }, returning: ['username', 'email', 'blogs']
+            "where": { id }
         });
         return result[0];
     }

@@ -4,6 +4,7 @@ import {ConfigModule} from "@nestjs/config/dist/config.module"
 import { UserModule } from 'src/modules/user/user.module';
 import { AuthModule } from 'src/modules/auth/auth.module';
 import { BlogModule } from 'src/modules/blog/blog.module';
+import { ReactionModule } from '../reaction/reaction.module';
 
 import { AppController } from './app.controller';
 
@@ -12,6 +13,7 @@ import {ConfigService} from "@nestjs/config/dist/config.service"
 
 import { User } from 'src/modules/user/model/user.model';
 import { Blog } from 'src/modules/blog/model/blog.model';
+import { Reaction } from '../reaction/model/reaction.model';
 import configuration from 'src/config/configuration';
 
 
@@ -32,13 +34,14 @@ import configuration from 'src/config/configuration';
           "username": configService.get("db_user"),
           synchronize: true,
           autoLoadModels: true,
-          models: [User, Blog],
+          models: [User, Blog, Reaction],
         }
       }
     }),
     UserModule,
     AuthModule,
-    BlogModule
+    BlogModule,
+    ReactionModule,
   ],
   controllers: [AppController],
   providers: [AppService],

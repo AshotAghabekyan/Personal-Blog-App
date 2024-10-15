@@ -1,6 +1,6 @@
-import { Model, Column, PrimaryKey, AutoIncrement, ForeignKey, BelongsTo, Table } from "sequelize-typescript";
+import { Model, Column, PrimaryKey, AutoIncrement, ForeignKey, BelongsTo, Table, HasMany } from "sequelize-typescript";
 import { User } from "src/modules/user/model/user.model";
-
+import { Reaction } from "src/modules/reaction/model/reaction.model";
 
 export interface BlogCreationAttributes {
     publisherId: number,
@@ -32,6 +32,7 @@ export class Blog extends Model<Blog, BlogCreationAttributes> {
     @Column
     public publishedDate: Date = new Date();
 
-    @Column
-    public likeCount: number = 0;
+
+    @HasMany(() => Reaction)
+    reactions: Reaction[]
 }

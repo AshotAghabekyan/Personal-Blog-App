@@ -6,8 +6,9 @@ import { HttpStatus } from "@nestjs/common/enums/http-status.enum";
 import { Request } from "express";
 
 import { UserService } from "./user.service";
-import { CreateUserDto } from "./model/user.dto";
+import { CreateUserDto, ResponseUserDto } from "./model/user.dto";
 import { AuthGuard } from "../auth/auth.guard";
+import { User } from "./model/user.model";
 
 
 @Controller('/users')
@@ -22,22 +23,25 @@ export class UserController {
     @UseGuards(AuthGuard)
     @HttpCode(HttpStatus.OK)
     @Get("/") 
-    public allUsers() {
-        return this.userService.allUsers();
+    public async allUsers() {
+        const allUsers: User[] = await this.userService.allUsers();
+        return allUsers.map((user: User) => new ResponseUserDto(user));
     }
 
     @UseGuards(AuthGuard)
     @HttpCode(HttpStatus.OK)
     @Get("/:id")
-    public findUserById(@Param('id', ParseIntPipe) id: number) {
-        return this.userService.findUserById(id);
+    public async findUserById(@Param('id', ParseIntPipe) id: number) {
+        const user: User = await this.userService.findUserById(id);
+        return new ResponseUserDto(user);
     } 
 
 
     @Post("/") 
     @HttpCode(HttpStatus.CREATED)
-    public createUser(@Body() userDto: CreateUserDto) {
-        return this.userService.createUser(userDto);
+    public async createUser(@Body() userDto: CreateUserDto) {
+        const createdUser: User = await this.userService.createUser(userDto);
+        return new ResponseUserDto(createdUser);
     }
 
 
