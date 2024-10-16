@@ -1,93 +1,94 @@
 import { Injectable } from "@nestjs/common/decorators/core/injectable.decorator";
-import { CreateUserDto } from "./model/user.dto";
-import { InjectModel } from "@nestjs/sequelize";
+
+import { UserRepository } from "./user.repository";
+import { UserCacheProvider } from "./user.cacheProvider"
+
 import { User } from "./model/user.model";
-import { HashGenerator } from "src/utils/crypto/crypto";
-import { BadRequestException, InternalServerErrorException, NotFoundException } from "@nestjs/common";
-import { Blog } from "src/modules/blog/model/blog.model";
+import { CreateUserDto } from "./model/user.dto";
+
+import { BadRequestException, NotFoundException } from "@nestjs/common";
 import errorResponse from "src/config/errorResponse";
-import { RedisCacheProvider } from "../globals/redis/redis.provider";
-import { UserRepositoryI } from "./user.repository";
+
+
 
 
 @Injectable()
-export class UserService implements UserRepositoryI {
+export class UserService {
 
-    private readonly userModel: typeof User;
-    private readonly hashGenerator: HashGenerator;
-    private readonly redisCacheProvider: RedisCacheProvider<User>;
+    private readonly userRepository: UserRepository;
+    private readonly userCacheProvider: UserCacheProvider;
 
-    constructor(@InjectModel(User) userModel: typeof User, redisCacheProvider: RedisCacheProvider<User>) {
-        this.userModel = userModel;
-        this.hashGenerator = new HashGenerator();
-        this.redisCacheProvider = redisCacheProvider;
+    constructor(userRepository: UserRepository, userCacheProvider: UserCacheProvider) {
+        this.userCacheProvider = userCacheProvider;
+        this.userRepository = userRepository;
     }
 
     public async allUsers(): Promise<User[]> {
-        const cacheData: User[] = await this.redisCacheProvider.getValues('users');
+        const cacheData: User[] = await this.userCacheProvider.getAllValues('users');
         if (cacheData) {
             return cacheData;
         }
 
-        const allUsers: User[] = await this.userModel.findAll({"include": [Blog]});
-        this.redisCacheProvider.setValue("users", allUsers);
+        const allUsers: User[] = await this.userRepository.allUsers();
+        if (allUsers.length == 0) {
+            throw new NotFoundException(errorResponse.resource_not_found)
+        }
+        this.userCacheProvider.setValue("users", allUsers);
         return allUsers;
     }
 
 
     public async findUserByEmail(email: string): Promise<User> {    
-        const cachedUser: User = await this.redisCacheProvider.getValue(email);
+        const cachedUser: User = await this.userCacheProvider.getValue(email);
         if (cachedUser) {
             return cachedUser;
         }
 
-        const targetUser = await this.userModel.findOne({"where": {email}, include: [Blog]});
-        this.redisCacheProvider.setValue(email, targetUser);
+        const targetUser = await this.userRepository.findUserByEmail(email);
+        if (!targetUser) {
+            throw new NotFoundException(errorResponse.user.user_not_found)
+        }
+
+        this.userCacheProvider.setValue(email, targetUser);
         return targetUser || null;
     }
 
 
     public async findUserById(id: number): Promise<User> {
-        const cachedUser: User = await this.redisCacheProvider.getValue(id);
+        const cachedUser: User = await this.userCacheProvider.getValue(id);
         if (cachedUser) {
             return cachedUser;
         }
 
-        const targetUser = await this.userModel.findByPk(id, {include: [Blog]});
-        await this.redisCacheProvider.setValue(id, targetUser);
+        const targetUser = await this.userRepository.findUserById(id);
+        if (!targetUser) {
+            throw new NotFoundException(errorResponse.user.user_not_found)
+        }
+
+        await this.userCacheProvider.setValue(id, targetUser);
         return targetUser || null;
     }
 
 
     public async changeUsername(id: number, newUsername: string) {
-        const result = await this.userModel.update({"username": newUsername}, {
-            "where": { id }
-        });
-        return result[0];
+        const isChanged: number = await this.userRepository.changeUsername(id, newUsername);
+        if (!isChanged) {
+            throw new Error(errorResponse.bad_request);
+        }
+
+        const changedUser: User = await this.findUserById(id);
+        return changedUser;
     }
 
 
     public async createUser(userDto: CreateUserDto): Promise<User> {
         const isUserExist: User = await this.findUserByEmail(userDto.email);
         if (isUserExist) {
-            throw new BadRequestException(errorResponse.user_exist);
+            throw new BadRequestException(errorResponse.user.user_exist);
         }
 
-        const hashedPassword = await this.hashGenerator.genHash(userDto.password);
-        if (!hashedPassword) {
-            throw new InternalServerErrorException(errorResponse.internal_server_error);
-        }
-        
-        const user = {
-            password: hashedPassword,
-            username: userDto.username,
-            email: userDto.email
-        };
-
-        const createdUser: User = await this.userModel.create<User>(user, {
-            "validate": true,
-        });
-        this.redisCacheProvider.setValue(createdUser.id, createdUser);
+        const createdUser: User = await this.userRepository.createUser(userDto)
+        this.userCacheProvider.setValue(createdUser.id, createdUser);
         return createdUser;
     }
 
@@ -96,10 +97,10 @@ export class UserService implements UserRepositoryI {
     public async deleteUser(user: {id: number, email: string}): Promise<boolean> {
         const targetUser = await this.findUserById(user.id);
         if (!targetUser) {
-            throw new NotFoundException(errorResponse.user_not_found);
+            throw new NotFoundException(errorResponse.user.user_not_found);
         }
 
-        const isDeleted = await this.userModel.destroy<User>({where: { id: user.id }});
+        const isDeleted = await this.userRepository.deleteUser(user);
         return Boolean(isDeleted);
     }
 

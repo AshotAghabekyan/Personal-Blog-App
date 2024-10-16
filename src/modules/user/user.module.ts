@@ -8,7 +8,6 @@ import { UserController } from "./user.controller";
 import { User } from "./model/user.model";
 import { RedisConfigService } from "src/modules/globals/redis/redis.config";
 import { ConfigService } from "@nestjs/config";
-import { RedisCacheProvider } from "../globals/redis/redis.provider";
 
 
 @Module({
@@ -25,7 +24,7 @@ import { RedisCacheProvider } from "../globals/redis/redis.provider";
     ],
     exports: [UserService],
     controllers: [UserController],
-    providers: [UserService, RedisCacheProvider]
+    providers: [UserService]
 })
 
 export class UserModule {};
