@@ -1,6 +1,7 @@
 import { Model, Column, PrimaryKey, AutoIncrement, ForeignKey, BelongsTo, Table, HasMany } from "sequelize-typescript";
 import { User } from "src/modules/user/model/user.model";
 import { Reaction } from "src/modules/reaction/model/reaction.model";
+import { BlogContentType } from "./blog.dto";
 
 export interface BlogCreationAttributes {
     publisherId: number,
@@ -28,6 +29,9 @@ export class Blog extends Model<Blog, BlogCreationAttributes> {
 
     @Column
     public mainContent: string;
+
+    // @Column
+    // public contentType: BlogContentType[];
 
     @Column
     public publishedDate: Date = new Date();

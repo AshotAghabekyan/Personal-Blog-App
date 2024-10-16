@@ -11,6 +11,7 @@ import { AuthGuard } from "../auth/auth.guard";
 import { User } from "./model/user.model";
 
 
+
 @Controller('/users')
 export class UserController {
     private readonly userService: UserService
