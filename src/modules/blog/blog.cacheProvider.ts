@@ -1,28 +1,29 @@
-import { Milliseconds } from "cache-manager";
+import { Injectable } from "@nestjs/common/decorators/core/injectable.decorator";
 import { RedisCacheProvider } from "../globals/redis/redis.provider";
-import { User } from "./model/user.model";
-import { Inject, Injectable } from "@nestjs/common";
-import { CACHE_MANAGER } from "@nestjs/cache-manager";
+import { Blog } from "./model/blog.model";
+import { Milliseconds } from "cache-manager";
+import { Inject } from "@nestjs/common/decorators/core/inject.decorator";
+import { CACHE_MANAGER } from "@nestjs/cache-manager/dist/cache.constants";
 import { Cache } from "cache-manager";
 
 
-
-
 @Injectable()
-export class UserCacheProvider implements RedisCacheProvider<User> {
+export class BlogCacheProvider implements RedisCacheProvider<Blog> {
     private readonly cacheManager: Cache;
 
     constructor(@Inject(CACHE_MANAGER) cacheManager: Cache) {
         this.cacheManager = cacheManager;
     } 
 
-    public async getValue(key: string | number): Promise<User> {
+
+    public async getValue(key: string | number): Promise<Blog> {
         try {
             if (typeof key == "number") {
                 key = String(key);
             }
-            const targetUser: User = await this.cacheManager.get(key);
-            return targetUser || null;
+    
+            const blog: Blog = await this.cacheManager.get(key);
+            return blog || null;
         }
         catch(error) {
             console.error(error);
@@ -31,43 +32,45 @@ export class UserCacheProvider implements RedisCacheProvider<User> {
     }
 
 
-    public async getAllValues(key: string | number): Promise<User[]> {
+    public async getAllValues(key: string | number): Promise<Blog[]> {
         try {
             if (typeof key == "number") {
                 key = String(key);
             }
-            const targetUser: User[] = await this.cacheManager.get(key);
-            return targetUser;
+    
+            const blogs: Blog[] = await this.cacheManager.get(key);
+            return blogs;
         }
         catch(error) {
             console.error(error);
-            return null;
         }
     }
 
 
-    public async setValue(key: string | number, value: User | User[], ttlMiliseconds: Milliseconds = 0): Promise<void> {
+    public async setValue(key: string | number, blog: Blog | Blog[], ttlMiliseconds: Milliseconds = 0): Promise<void> {
         try {
             if (typeof key == "number") {
                 key = String(key);
             }
-            await this.cacheManager.set(key, ttlMiliseconds);
+    
+            await this.cacheManager.set(key, blog, ttlMiliseconds);
         }
         catch(error) {
             console.error(error);
-            return null;
         }
     }
+
 
     public async deleteValue(key: string | number): Promise<void> {
         try {
             if (typeof key == "number") {
                 key = String(key);
             }
+
             await this.cacheManager.del(key);
         }
         catch(error) {
-            console.log(error);
+            console.error(error);
         }
     }
 }

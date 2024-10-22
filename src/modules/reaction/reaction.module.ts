@@ -4,10 +4,11 @@ import { ReactionService } from "./reaction.service";
 import { SequelizeModule } from "@nestjs/sequelize";
 import { Reaction } from "./model/reaction.model";
 import { JwtModule } from "@nestjs/jwt";
+import { ReactionRepository } from "./reaction.repository";
 
 @Module({
     "controllers": [ReactionController],
-    "providers": [ReactionService],
+    "providers": [ReactionService, ReactionRepository],
     "exports": [ReactionService],
     "imports": [SequelizeModule.forFeature([Reaction]), JwtModule]
 }) 

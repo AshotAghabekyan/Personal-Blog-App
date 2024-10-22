@@ -1,22 +1,24 @@
 import { Injectable } from "@nestjs/common/decorators/core/injectable.decorator";
-import { InjectModel } from "@nestjs/sequelize";
 import { BadRequestException, NotFoundException } from "@nestjs/common/exceptions/";
 
 import { BlogCreationAttributes } from "./model/blog.model";
-import { CreateBlogDto, ResponseBlogDto } from "./model/blog.dto";
+import { CreateBlogDto } from "./model/blog.dto";
 import { Blog } from "./model/blog.model";
-import { User } from "src/modules/user/model/user.model";
 import errorResponse from "src/config/errorResponse";
-import { Reaction } from "../reaction/model/reaction.model";
+import cacheKeys from "../../config/cacheKeys"
+import { BlogRepository } from "./blog.repository";
+import { BlogCacheProvider } from "./blog.cacheProvider";
 
 
 
 @Injectable()
 export class BlogService {
-    private readonly blogModel: typeof Blog;
+    private readonly blogRepository: BlogRepository;
+    private readonly blogCacheProvider: BlogCacheProvider;
 
-    constructor(@InjectModel(Blog) blogModel: typeof Blog) {
-        this.blogModel = blogModel;
+    constructor(blogRepository: BlogRepository, cacheProvider: BlogCacheProvider) {
+        this.blogRepository = blogRepository
+        this.blogCacheProvider = cacheProvider;
     }
 
     public async createBlog(blogDto: CreateBlogDto, publisherId: number): Promise<Blog> {
@@ -25,37 +27,61 @@ export class BlogService {
             blogTitle: blogDto.title,
             mainContent: blogDto.mainContent
         };
-        const newBlog: Blog = await this.blogModel.create(blog);
+
+        const newBlog: Blog = await this.blogRepository.createBlog(blog);
         if (!newBlog) {
-            throw new BadRequestException(errorResponse.blog_not_published);
+            throw new BadRequestException(errorResponse.blog.blog_not_published);
         }
+        const cacheKey: string = cacheKeys.blogs.blogById(newBlog.id);
+        this.blogCacheProvider.setValue(cacheKey, newBlog);
         return newBlog || null
     };
 
 
     public async getBlogById(blogId: number) {
-        const targetBlog: Blog = await this.blogModel.findByPk(blogId, {include: [User, Reaction]});
-        if (!targetBlog) {
-            throw new NotFoundException(errorResponse.blog_not_found)
+        const cacheKey: string = cacheKeys.blogs.blogById(blogId);
+        const cachedBlog: Blog = await this.blogCacheProvider.getValue(cacheKey);
+        if (cachedBlog) {
+            return cachedBlog;
         }
+
+        const targetBlog: Blog = await this.blogRepository.getBlogById(blogId);
+        if (!targetBlog) {
+            throw new NotFoundException(errorResponse.blog.blog_not_found)
+        }
+
+        this.blogCacheProvider.setValue(cacheKey, targetBlog);
         return targetBlog || null; 
     };
 
 
     public async allBlogsOfUser(userId: number) {
-        const blogsOfUser: Blog[] = await this.blogModel.findAll({where: {"publisherId": userId}, include: [Reaction]});
-        if (blogsOfUser.length == 0) {
-            throw new NotFoundException(errorResponse.blog_not_found)
+        const cacheKey: string = cacheKeys.blogs.blogsOfUser(userId);
+        const cachedBlogsOfUser: Blog[] = await this.blogCacheProvider.getAllValues(cacheKey);
+        if (cachedBlogsOfUser) {
+            return cachedBlogsOfUser;
         }
-        
+
+        const blogsOfUser: Blog[] = await this.blogRepository.allBlogsOfUser(userId);
+        if (blogsOfUser.length == 0) {
+            throw new NotFoundException(errorResponse.blog.blog_not_found)
+        }
+
+        this.blogCacheProvider.setValue(cacheKey, blogsOfUser);
         return blogsOfUser || null
     };
 
 
     public async allBlogs() {
-        const allBlogs: Blog[] = await this.blogModel.findAll({include: [User, Reaction]});
+        const cacheKey: string = cacheKeys.blogs.allBlogs();
+        const cachedAllBlogs: Blog[] = await this.blogCacheProvider.getAllValues(cacheKey);
+        if (cachedAllBlogs) {
+            return cachedAllBlogs;
+        }
+
+        const allBlogs: Blog[] = await this.blogRepository.allBlogs();
         if (allBlogs.length == 0) {
-            throw new NotFoundException(errorResponse.blog_not_found)
+            throw new NotFoundException(errorResponse.blog.blog_not_found)
         }
         
         return allBlogs || null;
@@ -63,10 +89,13 @@ export class BlogService {
 
 
     public async deleteBlog(blogId: number) {
-        const deletionResult: number = await this.blogModel.destroy({"where": {"id": blogId}});
+        const deletionResult: boolean = await this.blogRepository.deleteBlog(blogId);
         if (!deletionResult) {
-            throw new BadRequestException(errorResponse.blog_not_been_deleted)
+            throw new BadRequestException(errorResponse.blog.blog_not_been_deleted)
         }
+
+        const cacheKey: string = cacheKeys.blogs.blogById(blogId);
+        this.blogCacheProvider.deleteValue(cacheKey);
         return Boolean(deletionResult);
     };
 

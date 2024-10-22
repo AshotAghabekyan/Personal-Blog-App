@@ -1,6 +1,5 @@
 import { IsString } from "class-validator";
 import { Reaction } from "src/modules/reaction/model/reaction.model";
-import { User } from "src/modules/user/model/user.model";
 import { Blog } from "./blog.model";
 import { ResponseUserDto } from "src/modules/user/model/user.dto";
 
@@ -42,8 +41,8 @@ export class ResponseBlogDto {
     // contentType: BlogContentType[]
     publisherId: number;
     likeCount: number;
-    publisher?: ResponseUserDto
-    reactions?: Reaction[]
+    publisher?: ResponseUserDto;
+    reactions?: Reaction[];
 
     constructor(blog: Blog) {
         this.id = blog.id;

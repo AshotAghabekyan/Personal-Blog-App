@@ -8,6 +8,8 @@ import { UserController } from "./user.controller";
 import { User } from "./model/user.model";
 import { RedisConfigService } from "src/modules/globals/redis/redis.config";
 import { ConfigService } from "@nestjs/config";
+import { UserRepository } from "./user.repository";
+import { UserCacheProvider } from "./user.cacheProvider";
 
 
 @Module({
@@ -20,11 +22,11 @@ import { ConfigService } from "@nestjs/config";
                 const dbIndex = configService.get('users_cache_db');
                 return redisConfigService.getRedisConfig(dbIndex);
             }
-          }),
+        }),
     ],
     exports: [UserService],
     controllers: [UserController],
-    providers: [UserService]
+    providers: [UserService, UserRepository, UserCacheProvider]
 })
 
 export class UserModule {};

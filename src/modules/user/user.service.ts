@@ -8,6 +8,8 @@ import { CreateUserDto } from "./model/user.dto";
 
 import { BadRequestException, NotFoundException } from "@nestjs/common";
 import errorResponse from "src/config/errorResponse";
+import cacheKeys from "src/config/cacheKeys";
+import { HashGenerator } from "src/utils/crypto/crypto";
 
 
 
@@ -17,6 +19,7 @@ export class UserService {
 
     private readonly userRepository: UserRepository;
     private readonly userCacheProvider: UserCacheProvider;
+    private readonly hashGenerator: HashGenerator = new HashGenerator();
 
     constructor(userRepository: UserRepository, userCacheProvider: UserCacheProvider) {
         this.userCacheProvider = userCacheProvider;
@@ -24,7 +27,8 @@ export class UserService {
     }
 
     public async allUsers(): Promise<User[]> {
-        const cacheData: User[] = await this.userCacheProvider.getAllValues('users');
+        const cacheKey: string = cacheKeys.users.allUsers();
+        const cacheData: User[] = await this.userCacheProvider.getAllValues(cacheKey);
         if (cacheData) {
             return cacheData;
         }
@@ -33,13 +37,14 @@ export class UserService {
         if (allUsers.length == 0) {
             throw new NotFoundException(errorResponse.resource_not_found)
         }
-        this.userCacheProvider.setValue("users", allUsers);
+        this.userCacheProvider.setValue(cacheKey, allUsers);
         return allUsers;
     }
 
 
     public async findUserByEmail(email: string): Promise<User> {    
-        const cachedUser: User = await this.userCacheProvider.getValue(email);
+        const cacheKey: string = cacheKeys.users.userByEmail(email);
+        const cachedUser: User = await this.userCacheProvider.getValue(cacheKey);
         if (cachedUser) {
             return cachedUser;
         }
@@ -49,13 +54,15 @@ export class UserService {
             throw new NotFoundException(errorResponse.user.user_not_found)
         }
 
-        this.userCacheProvider.setValue(email, targetUser);
+        this.userCacheProvider.setValue(cacheKey, targetUser);
         return targetUser || null;
     }
 
 
     public async findUserById(id: number): Promise<User> {
-        const cachedUser: User = await this.userCacheProvider.getValue(id);
+        const cacheKey: string = cacheKeys.users.userById(id);
+
+        const cachedUser: User = await this.userCacheProvider.getValue(cacheKey);
         if (cachedUser) {
             return cachedUser;
         }
@@ -65,7 +72,7 @@ export class UserService {
             throw new NotFoundException(errorResponse.user.user_not_found)
         }
 
-        await this.userCacheProvider.setValue(id, targetUser);
+        await this.userCacheProvider.setValue(cacheKey, targetUser);
         return targetUser || null;
     }
 
@@ -77,6 +84,8 @@ export class UserService {
         }
 
         const changedUser: User = await this.findUserById(id);
+        const cacheKey: string = cacheKeys.users.userById(id);
+        this.userCacheProvider.setValue(cacheKey, changedUser);
         return changedUser;
     }
 
@@ -87,8 +96,10 @@ export class UserService {
             throw new BadRequestException(errorResponse.user.user_exist);
         }
 
-        const createdUser: User = await this.userRepository.createUser(userDto)
-        this.userCacheProvider.setValue(createdUser.id, createdUser);
+        userDto.password = await this.hashGenerator.genHash(userDto.password);
+        const createdUser: User = await this.userRepository.createUser(userDto);
+        const cacheKey: string = cacheKeys.users.userById(createdUser.id);
+        this.userCacheProvider.setValue(cacheKey, createdUser);
         return createdUser;
     }
 
@@ -100,7 +111,9 @@ export class UserService {
             throw new NotFoundException(errorResponse.user.user_not_found);
         }
 
-        const isDeleted = await this.userRepository.deleteUser(user);
+        const isDeleted = await this.userRepository.deleteUser(user.id);
+        const cacheKey: string = cacheKeys.users.userById(user.id);
+        this.userCacheProvider.deleteValue(cacheKey);
         return Boolean(isDeleted);
     }
 

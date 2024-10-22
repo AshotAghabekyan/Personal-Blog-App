@@ -3,7 +3,7 @@ import { Blog } from "src/modules/blog/model/blog.model";
 import { User } from "src/modules/user/model/user.model";
 
 
-interface ReactionCreationAttrs {
+export interface ReactionCreationAttrs {
     userId: number,
     blogId: number,
 }

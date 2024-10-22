@@ -1,5 +1,5 @@
 import { Injectable } from "@nestjs/common"
-import { CreateUserDto } from "./model/user.dto"
+import { UserCreationAttrs } from "./model/user.model"
 import { User } from "./model/user.model"
 import { InjectModel } from "@nestjs/sequelize/dist/common/sequelize.decorators"
 import { HashGenerator } from "src/utils/crypto/crypto"
@@ -12,8 +12,8 @@ interface RepositoryI {
     findUserByEmail(email: string): Promise<User>
     findUserById(id: number): Promise<User>
     changeUsername(id: number, newUsername: string): Promise<number>
-    createUser(userDto: CreateUserDto): Promise<User>
-    deleteUser(user: {id: number, email: string}): Promise<boolean>
+    createUser(userDto: UserCreationAttrs): Promise<User>
+    deleteUser(userId: number): Promise<boolean>
 }
 
 
@@ -56,15 +56,8 @@ export class UserRepository implements RepositoryI {
     }
 
 
-    public async createUser(userDto: CreateUserDto): Promise<User> {
-        const hashedPassword = await this.hashGenerator.genHash(userDto.password);
-        const user = {
-            password: hashedPassword,
-            username: userDto.username,
-            email: userDto.email
-        };
-
-        const createdUser: User = await this.userModel.create<User>(user, {
+    public async createUser(userAttrs: UserCreationAttrs): Promise<User> {
+        const createdUser: User = await this.userModel.create<User>(userAttrs, {
             "validate": true,
         });
         return createdUser;
@@ -72,13 +65,13 @@ export class UserRepository implements RepositoryI {
 
 
 
-    public async deleteUser(user: {id: number, email: string}): Promise<boolean> {
-        const targetUser = await this.findUserById(user.id);
+    public async deleteUser(userId: number): Promise<boolean> {
+        const targetUser = await this.findUserById(userId);
         if (!targetUser) {
             return null;
         }
 
-        const isDeleted = await this.userModel.destroy<User>({where: { id: user.id }});
+        const isDeleted = await this.userModel.destroy<User>({where: { id: userId }});
         return Boolean(isDeleted);
     }
 

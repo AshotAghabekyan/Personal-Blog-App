@@ -30,12 +30,12 @@ export class AuthGuard implements CanActivate {
     private async validateRequest(request: Request): Promise<boolean> {
         const authHeader: string = request.headers.authorization;
         if (!authHeader) {
-            throw new UnauthorizedException(errorResponse.missed_token);
+            throw new UnauthorizedException(errorResponse.auth.missed_token);
         }
 
         const [authType, token] = authHeader.split(" ");
         if (authType.toLowerCase() != 'bearer' || !token) {
-            throw new UnauthorizedException(errorResponse.invalid_credentials);
+            throw new UnauthorizedException(errorResponse.auth.invalid_credentials);
         }
 
         try {

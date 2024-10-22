@@ -2,49 +2,53 @@ import { Injectable } from "@nestjs/common/decorators/core/injectable.decorator"
 import { Reaction } from "./model/reaction.model";
 import { InjectModel } from "@nestjs/sequelize";
 import { BadRequestException } from "@nestjs/common";
-
+import { ReactionRepository } from "./reaction.repository";
+import { ReactionCreationAttrs } from "./model/reaction.model";
+import errorResponse from "src/config/errorResponse";
 
 
 @Injectable()
 export class ReactionService {
-    private readonly reactionModel: typeof Reaction
+    private readonly repository: ReactionRepository;
 
-    constructor(@InjectModel(Reaction) reactionModel: typeof Reaction) {
-        this.reactionModel = reactionModel;
+    constructor(reactionRepository: ReactionRepository) {
+        this.repository = reactionRepository
     }
 
 
     public async allReactionsOfBlog(blogId: number) {
-        const targetBlogReactions = await this.reactionModel.findAll({where: {blogId}});
+        const targetBlogReactions = await this.repository.allReactionsOfBlog(blogId);
         return targetBlogReactions || null;
     }
 
 
     public async userReactions(userId: number) {
-        const targetUserReactions = await this.reactionModel.findAll({where: {userId}});
+        const targetUserReactions = await this.repository.userReactions(userId);
         return targetUserReactions || null;
     }
 
 
     public async likeBlog(blogId: number, userId: number) {
-        const isAlreadyReacted = await this.reactionModel.findOne({"where": {blogId, userId}});
-        if (isAlreadyReacted) {
-            throw new BadRequestException("user already reacted the blog");
+        const reaction: ReactionCreationAttrs = {blogId, userId};
+        const existReaction: Reaction = await this.repository.getReaction(reaction);
+        if (existReaction) {
+            throw new BadRequestException(errorResponse.reactions);
         }
 
-        await this.reactionModel.create({"blogId": blogId, "userId": userId})
+        await this.repository.likeBlog(reaction);
         return true;
     }
 
 
     public async unlikeBlog(blogId: number, userId: number) {
-        const isAlreadyReacted = await this.reactionModel.findOne({"where": {blogId, userId}});
-        if (!isAlreadyReacted) {
+        const reaction: ReactionCreationAttrs = {userId, blogId};
+
+        const existReaction: Reaction = await this.repository.getReaction(reaction);
+        if (!existReaction) {
             throw new BadRequestException("user cannot react");
         }
 
-        await this.reactionModel.destroy({"where": {blogId, userId}});
-        return true;
+        await this.repository.unlikeBlog(reaction)
     }
 }
 

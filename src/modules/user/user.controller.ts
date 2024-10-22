@@ -29,6 +29,7 @@ export class UserController {
         return allUsers.map((user: User) => new ResponseUserDto(user));
     }
 
+
     @UseGuards(AuthGuard)
     @HttpCode(HttpStatus.OK)
     @Get("/:id")

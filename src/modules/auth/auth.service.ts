@@ -28,12 +28,12 @@ export class AuthService {
         const existUser: User = await this.userService.findUserByEmail(dto.email);
         
         if (!existUser) {
-            throw new NotFoundException(errorResponse.invalid_login);
+            throw new NotFoundException(errorResponse.auth.invalid_login);
         }
 
         const isValidPassword: boolean = await this.hashGenerator.compareHashedData(dto.password, existUser.password);
         if (!isValidPassword) {
-            throw new NotFoundException(errorResponse.invalid_login);
+            throw new NotFoundException(errorResponse.auth.invalid_login);
         }
 
         const token = await this.jwtService.signAsync({sub: existUser.id, email: dto.email});
