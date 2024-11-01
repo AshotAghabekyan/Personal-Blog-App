@@ -3,17 +3,18 @@ import { Blog, BlogCreationAttributes } from "./model/blog.model";
 import { User } from "../user/model/user.model";
 import { Reaction } from "../reaction/model/reaction.model";
 import { Injectable } from "@nestjs/common/decorators/core/injectable.decorator";
+import { BlogGenre } from "../blog_genre/models/blogGenre.model";
 
 
 
 
 interface RepositoryI {
-    createBlog(blog: BlogCreationAttributes): Promise<Blog>
-    getBlogById(blogId: number): Promise<Blog>
-    allBlogsOfUser(userId: number): Promise<Blog[]>
-    allBlogs(): Promise<Blog[]>
-    deleteBlog(blogId: number): Promise<boolean>
-}
+    createBlog(blog: BlogCreationAttributes): Promise<Blog>;
+    getBlogById(blogId: number): Promise<Blog>;
+    allBlogsOfUser(userId: number): Promise<Blog[]>;
+    allBlogs(): Promise<Blog[]>;
+    deleteBlog(blogId: number): Promise<boolean>;
+};
 
 
 
@@ -23,7 +24,7 @@ export class BlogRepository implements RepositoryI {
 
     constructor(@InjectModel(Blog) blogModel: typeof Blog) {
         this.blogModel = blogModel;
-    }
+    };
 
     public async createBlog(blog: BlogCreationAttributes): Promise<Blog> {
         try {

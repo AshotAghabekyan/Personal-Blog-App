@@ -1,6 +1,5 @@
 import { Injectable } from "@nestjs/common/decorators/core/injectable.decorator";
 import { Reaction } from "./model/reaction.model";
-import { InjectModel } from "@nestjs/sequelize";
 import { BadRequestException } from "@nestjs/common";
 import { ReactionRepository } from "./reaction.repository";
 import { ReactionCreationAttrs } from "./model/reaction.model";

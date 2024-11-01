@@ -10,7 +10,6 @@ import { Cache } from "cache-manager";
 @Injectable()
 export class BlogCacheProvider implements RedisCacheProvider<Blog> {
     private readonly cacheManager: Cache;
-
     constructor(@Inject(CACHE_MANAGER) cacheManager: Cache) {
         this.cacheManager = cacheManager;
     } 

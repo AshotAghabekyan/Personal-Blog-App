@@ -17,13 +17,14 @@ import { HashGenerator } from "src/utils/crypto/crypto";
 @Injectable()
 export class UserService {
 
-    private readonly userRepository: UserRepository;
-    private readonly userCacheProvider: UserCacheProvider;
-    private readonly hashGenerator: HashGenerator = new HashGenerator();
+    protected readonly userRepository: UserRepository;
+    protected readonly userCacheProvider: UserCacheProvider;
+    protected readonly hashGenerator: HashGenerator;
 
     constructor(userRepository: UserRepository, userCacheProvider: UserCacheProvider) {
         this.userCacheProvider = userCacheProvider;
         this.userRepository = userRepository;
+        this.hashGenerator = new HashGenerator();
     }
 
     public async allUsers(): Promise<User[]> {
@@ -89,6 +90,18 @@ export class UserService {
         return changedUser;
     }
 
+};
+
+
+
+
+
+export class UserLifecycleService  extends UserService {
+
+    constructor(userRepository: UserRepository, userCacheProvider: UserCacheProvider) {
+        super(userRepository, userCacheProvider);
+    }
+
 
     public async createUser(userDto: CreateUserDto): Promise<User> {
         const isUserExist: User = await this.findUserByEmail(userDto.email);
@@ -116,5 +129,4 @@ export class UserService {
         this.userCacheProvider.deleteValue(cacheKey);
         return Boolean(isDeleted);
     }
-
-};
+}

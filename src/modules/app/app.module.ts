@@ -1,11 +1,12 @@
 import { Module } from '@nestjs/common/decorators/modules/module.decorator';
 import { SequelizeModule } from '@nestjs/sequelize/dist/sequelize.module';
 import {ConfigModule} from "@nestjs/config/dist/config.module";
-import { CacheModule, CacheStore } from '@nestjs/cache-manager';
+import { CacheModule } from '@nestjs/cache-manager';
 
 import { UserModule } from 'src/modules/user/user.module';
 import { AuthModule } from 'src/modules/auth/auth.module';
 import { BlogModule } from 'src/modules/blog/blog.module';
+import { GenreModule } from '../blog_genre/genre.module';
 import { ReactionModule } from '../reaction/reaction.module';
 import { RedisConfigModule } from '../globals/redis/redis.module';
 
@@ -21,6 +22,8 @@ import { Reaction } from '../reaction/model/reaction.model';
 import type { RedisClientOptions } from 'redis';
 import { redisStore } from 'cache-manager-redis-yet'; 
 import configuration from 'src/config/configuration';
+import { BlogGenre } from '../blog_genre/models/blogGenre.model';
+import { SequlizeTransactionModule } from '../globals/sequlizeTransaction/transaction.module';
 
 @Module({
   imports: [
@@ -53,7 +56,7 @@ import configuration from 'src/config/configuration';
           "username": configService.get("db_user"),
           synchronize: true,
           autoLoadModels: true,
-          models: [User, Blog, Reaction],
+          models: [User, Blog, Reaction, BlogGenre],
         }
       }
     }),
@@ -62,8 +65,10 @@ import configuration from 'src/config/configuration';
     UserModule,
     AuthModule,
     BlogModule,
+    GenreModule,
     ReactionModule,
-    RedisConfigModule
+    RedisConfigModule,
+    SequlizeTransactionModule,
   ],
   controllers: [AppController],
   providers: [AppService],

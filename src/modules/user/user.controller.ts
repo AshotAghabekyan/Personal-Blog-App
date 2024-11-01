@@ -5,7 +5,7 @@ import { ParseIntPipe } from "@nestjs/common/pipes/parse-int.pipe"
 import { HttpStatus } from "@nestjs/common/enums/http-status.enum";
 import { Request } from "express";
 
-import { UserService } from "./user.service";
+import { UserLifecycleService, UserService } from "./user.service";
 import { CreateUserDto, ResponseUserDto } from "./model/user.dto";
 import { AuthGuard } from "../auth/auth.guard";
 import { User } from "./model/user.model";
@@ -15,9 +15,11 @@ import { User } from "./model/user.model";
 @Controller('/users')
 export class UserController {
     private readonly userService: UserService
+    private readonly userLifecycleService: UserLifecycleService;
 
-    constructor(userServce: UserService) {
+    constructor(userServce: UserService, userLifecycleService: UserLifecycleService) {
         this.userService = userServce;
+        this.userLifecycleService = userLifecycleService;
     }
 
 
@@ -42,7 +44,7 @@ export class UserController {
     @Post("/") 
     @HttpCode(HttpStatus.CREATED)
     public async createUser(@Body() userDto: CreateUserDto) {
-        const createdUser: User = await this.userService.createUser(userDto);
+        const createdUser: User = await this.userLifecycleService.createUser(userDto);
         return new ResponseUserDto(createdUser);
     }
 
@@ -51,6 +53,6 @@ export class UserController {
     @HttpCode(HttpStatus.OK)
     @Delete("/")
     public deleteUser( @Req() req: Request) {
-        return this.userService.deleteUser(req['user']);
+        return this.userLifecycleService.deleteUser(req['user']);
     }
 }

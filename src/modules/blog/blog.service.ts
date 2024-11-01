@@ -8,34 +8,31 @@ import errorResponse from "src/config/errorResponse";
 import cacheKeys from "../../config/cacheKeys"
 import { BlogRepository } from "./blog.repository";
 import { BlogCacheProvider } from "./blog.cacheProvider";
+import { SequlizeTransactionProvider } from "../globals/sequlizeTransaction/transaction.provider";
+import { GenreService } from "../blog_genre/genre.service";
+import { BlogGenreTypes } from "../blog_genre/models/genre.types";
+
+
 
 
 
 @Injectable()
 export class BlogService {
-    private readonly blogRepository: BlogRepository;
-    private readonly blogCacheProvider: BlogCacheProvider;
+    protected readonly blogRepository: BlogRepository;
+    protected readonly blogCacheProvider: BlogCacheProvider;
+    protected readonly genreService: GenreService;
 
-    constructor(blogRepository: BlogRepository, cacheProvider: BlogCacheProvider) {
-        this.blogRepository = blogRepository
+    constructor(
+        blogRepository: BlogRepository,
+        genreService: GenreService,
+        cacheProvider: BlogCacheProvider,
+    ) {
+        this.blogRepository = blogRepository;
         this.blogCacheProvider = cacheProvider;
+        this.genreService = genreService;
     }
 
-    public async createBlog(blogDto: CreateBlogDto, publisherId: number): Promise<Blog> {
-        const blog: BlogCreationAttributes = {
-            publisherId,
-            blogTitle: blogDto.title,
-            mainContent: blogDto.mainContent
-        };
 
-        const newBlog: Blog = await this.blogRepository.createBlog(blog);
-        if (!newBlog) {
-            throw new BadRequestException(errorResponse.blog.blog_not_published);
-        }
-        const cacheKey: string = cacheKeys.blogs.blogById(newBlog.id);
-        this.blogCacheProvider.setValue(cacheKey, newBlog);
-        return newBlog || null
-    };
 
 
     public async getBlogById(blogId: number) {
@@ -88,6 +85,53 @@ export class BlogService {
     };
 
 
+    public async editBlog() {};
+}
+
+
+
+
+
+
+export class BlogLifecycleService extends BlogService {
+    private readonly transactionProvider: SequlizeTransactionProvider;
+
+    constructor(
+        blogRepository: BlogRepository,
+        genreService: GenreService,
+        cacheProvider: BlogCacheProvider,
+        sequlizeTransactionProvider: SequlizeTransactionProvider,
+    ) 
+    {
+        super(blogRepository, genreService, cacheProvider);
+        this.transactionProvider = sequlizeTransactionProvider;
+    }
+
+
+    public async createBlog(blogDto: CreateBlogDto, publisherId: number): Promise<Blog> {
+        const blog: BlogCreationAttributes = {
+            publisherId,
+            blogTitle: blogDto.title,
+            mainContent: blogDto.mainContent,
+            genres: blogDto.genre,
+        };
+        
+        let newBlog: Blog = null;
+        await this.transactionProvider.runTransaction(async () => {
+            newBlog = await this.blogRepository.createBlog(blog);
+            if (!newBlog) {
+                throw new BadRequestException(errorResponse.blog.blog_not_published);
+            }
+            await this.genreService.createGenre(newBlog.id, blog.genres);
+        })
+
+        const cacheKey: string = cacheKeys.blogs.blogById(newBlog.id);
+        this.blogCacheProvider.setValue(cacheKey, newBlog);
+        return newBlog || null
+    };
+
+
+
     public async deleteBlog(blogId: number) {
         const deletionResult: boolean = await this.blogRepository.deleteBlog(blogId);
         if (!deletionResult) {
@@ -99,5 +143,64 @@ export class BlogService {
         return Boolean(deletionResult);
     };
 
-    public async editBlog() {};
+}
+
+
+
+
+
+
+
+@Injectable()
+export class BlogGenreService extends BlogService {
+    constructor(
+        blogRepository: BlogRepository,
+        genreService: GenreService,
+        cacheProvider: BlogCacheProvider,
+    ) 
+    {
+        super(blogRepository, genreService, cacheProvider);
+    }
+
+
+
+    public async allBlogsByGenre(genreTitle: BlogGenreTypes) {
+        const isGenreValid: BlogGenreTypes = BlogGenreTypes[genreTitle];
+        if (!isGenreValid) {
+            throw new NotFoundException("invalid genre type");
+        }
+
+        const blogsIds: number[] = await this.genreService.findBlogIdsByGenre(genreTitle);
+        let promiseBlogs: Promise<Blog>[] = blogsIds.map(async (blogId: number) => {
+            return this.blogRepository.getBlogById(blogId);
+        })
+        return Promise.all(promiseBlogs);
+    }
+
+
+    public async findRelatedBlogs(genre: BlogGenreTypes) {
+        const isGenreValid: BlogGenreTypes = BlogGenreTypes[genre];
+        if (!isGenreValid) {
+            throw new NotFoundException("invalid genre type");
+        }
+        return this.genreService;
+    }
+
+
+    public async removeGenreFromBlog(blogId: number, genreTitle: BlogGenreTypes) {
+        const isBlogExist: Blog = await this.getBlogById(blogId);
+        if (!isBlogExist) {
+            throw new NotFoundException("blog not found");
+        }
+        return this.genreService.removeGenreFromBlog(blogId, genreTitle);
+    }
+
+
+    public async deleteBlogRelatedGenres(blogId: number) {
+        const isBlogExist: Blog = await this.getBlogById(blogId);
+        if (!isBlogExist) {
+            throw new NotFoundException("blog not found");
+        }
+        return this.genreService.deleteBlogRelatedRecords(blogId);
+    }
 }

@@ -1,12 +1,15 @@
-import { Model, Column, PrimaryKey, AutoIncrement, ForeignKey, BelongsTo, Table, HasMany } from "sequelize-typescript";
+import { Model, Column, PrimaryKey, AutoIncrement, ForeignKey, BelongsTo, Table, HasMany, BelongsToMany } from "sequelize-typescript";
 import { User } from "src/modules/user/model/user.model";
 import { Reaction } from "src/modules/reaction/model/reaction.model";
-import { BlogContentType } from "./blog.dto";
+import { BlogGenre } from "src/modules/blog_genre/models/blogGenre.model";
+import { BlogGenreTypes } from "src/modules/blog_genre/models/genre.types";
+
 
 export interface BlogCreationAttributes {
     publisherId: number,
     blogTitle: string,
-    mainContent: string
+    mainContent: string,
+    genres: BlogGenreTypes[]
 }
 
 
@@ -30,13 +33,13 @@ export class Blog extends Model<Blog, BlogCreationAttributes> {
     @Column
     public mainContent: string;
 
-    // @Column
-    // public contentType: BlogContentType[];
-
     @Column
     public publishedDate: Date = new Date();
 
 
+    @HasMany(() => BlogGenre)
+    public genres: BlogGenre[]
+
     @HasMany(() => Reaction)
-    reactions: Reaction[]
+    public reactions: Reaction[]
 }

@@ -1,22 +1,25 @@
 import { Controller } from "@nestjs/common/decorators/core/controller.decorator";
 import { UseGuards } from "@nestjs/common/decorators/core/use-guards.decorator";
-import { Body, Param, Req, Get, Post, HttpCode } from "@nestjs/common/decorators/http/";
+import { Body, Param, Req, Get, Post, HttpCode, Delete } from "@nestjs/common/decorators/http/";
 import { HttpStatus } from "@nestjs/common/enums/http-status.enum";
-import { BlogService } from "./blog.service";
+import { BlogGenreService, BlogLifecycleService, BlogService } from "./blog.service";
 import { AuthGuard } from "src/modules/auth/auth.guard";
 import { CreateBlogDto, ResponseBlogDto } from "./model/blog.dto";
 import { Request } from "express";
 import { ParseIntPipe } from "@nestjs/common";
 import { Blog } from "./model/blog.model";
+import { BlogGenreTypes } from "../blog_genre/models/genre.types";
 
 
 
 @Controller("/blogs")
 export class BlogController {
     private readonly blogService: BlogService;
+    private readonly blogLifecycleService: BlogLifecycleService
 
-    constructor(blogService: BlogService) {
+    constructor(blogService: BlogService, blogLifecycleService: BlogLifecycleService) {
         this.blogService = blogService;
+        this.blogLifecycleService = blogLifecycleService;
     }
 
     @HttpCode(HttpStatus.CREATED)
@@ -24,8 +27,16 @@ export class BlogController {
     @Post('/')
     public async createBlog(@Body() blogDto: CreateBlogDto, @Req() req: Request) {
         const publisherId: number = req['user'].sub;
-        const createdBlog: Blog = await this.blogService.createBlog(blogDto, publisherId);
+        const createdBlog: Blog = await this.blogLifecycleService.createBlog(blogDto, publisherId);
         return new ResponseBlogDto(createdBlog);
+    };
+
+
+    @UseGuards(AuthGuard)
+    @HttpCode(HttpStatus.OK)
+    @Delete("/:blogId")
+    public deleteBlog(@Param("blogId", ParseIntPipe) blogId: number) {
+        return this.blogLifecycleService.deleteBlog(blogId);
     };
 
 
@@ -36,6 +47,7 @@ export class BlogController {
         const blog: Blog = await this.blogService.getBlogById(blogId);
         return new ResponseBlogDto(blog);
     };
+
 
 
     @UseGuards(AuthGuard)
@@ -55,12 +67,39 @@ export class BlogController {
     };
 
 
-    @UseGuards(AuthGuard)
-    @HttpCode(HttpStatus.OK)
-    public deleteBlog(blogId: number) {};
-
 
     @UseGuards(AuthGuard)
     @HttpCode(HttpStatus.CREATED)
     public editBlog() {};
 }
+
+
+
+
+
+@Controller("/blogs/genre")
+export class BlogGenreController {
+    private readonly blogGenreService: BlogGenreService;
+    constructor(blogGenreService: BlogGenreService) {
+        this.blogGenreService = blogGenreService;
+    }
+
+
+    @UseGuards(AuthGuard)
+    @HttpCode(HttpStatus.OK)
+    @Get("/:genre")
+    public async getBlogsByGenre(@Param("genre") genre: BlogGenreTypes) {
+        const blogs: Blog[] = await this.blogGenreService.allBlogsByGenre(genre);
+        return blogs.map((blog: Blog) => new ResponseBlogDto(blog));
+    }
+
+
+    @UseGuards(AuthGuard)
+    @HttpCode(HttpStatus.OK)
+    @Get("/recomendation")
+    public getRecomendatedBlogs() {
+
+    }
+}
+
+

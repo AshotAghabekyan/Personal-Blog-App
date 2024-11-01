@@ -3,7 +3,7 @@ import { CacheModule } from "@nestjs/cache-manager";
 import { SequelizeModule } from "@nestjs/sequelize/dist/sequelize.module";
 import { JwtModule } from "@nestjs/jwt";
 
-import { UserService } from "./user.service";
+import { UserLifecycleService, UserService } from "./user.service";
 import { UserController } from "./user.controller";
 import { User } from "./model/user.model";
 import { RedisConfigService } from "src/modules/globals/redis/redis.config";
@@ -26,7 +26,7 @@ import { UserCacheProvider } from "./user.cacheProvider";
     ],
     exports: [UserService],
     controllers: [UserController],
-    providers: [UserService, UserRepository, UserCacheProvider]
+    providers: [UserService, UserLifecycleService, UserRepository, UserCacheProvider]
 })
 
 export class UserModule {};
