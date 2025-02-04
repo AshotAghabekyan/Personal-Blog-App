@@ -13,13 +13,15 @@ import { ConfigService } from "@nestjs/config/dist/config.service";
 import { RedisConfigService } from "../globals/redis/redis.config";
 import { GenreRepository } from "../blog_genre/genre.repository";
 import { BlogGenre } from "../blog_genre/models/blogGenre.model";
+import { ReactionModule } from "../reaction/reaction.module";
+
 
 
 @Module({
     "imports": [
         GenreModule,
-        SequelizeModule.forFeature([Blog, BlogGenre]),
         JwtModule,
+        SequelizeModule.forFeature([Blog, BlogGenre]),
         CacheModule.registerAsync({
             inject: [ConfigService, RedisConfigService],
             useFactory: async (configService: ConfigService, redisConfigService: RedisConfigService) => {
@@ -28,6 +30,8 @@ import { BlogGenre } from "../blog_genre/models/blogGenre.model";
             }
         }),
     ],
+
+    "exports": [BlogLifecycleService, BlogService],
     "controllers": [BlogController, BlogGenreController],
     "providers": [
         BlogService,

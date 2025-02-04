@@ -11,7 +11,7 @@ import { BlogCacheProvider } from "./blog.cacheProvider";
 import { SequlizeTransactionProvider } from "../globals/sequlizeTransaction/transaction.provider";
 import { GenreService } from "../blog_genre/genre.service";
 import { BlogGenreTypes } from "../blog_genre/models/genre.types";
-
+import { ReactionService } from "../reaction/reaction.service";
 
 
 
@@ -31,7 +31,6 @@ export class BlogService {
         this.blogCacheProvider = cacheProvider;
         this.genreService = genreService;
     }
-
 
 
 
@@ -93,14 +92,18 @@ export class BlogService {
 
 
 
+
+
+@Injectable()
 export class BlogLifecycleService extends BlogService {
     private readonly transactionProvider: SequlizeTransactionProvider;
+
 
     constructor(
         blogRepository: BlogRepository,
         genreService: GenreService,
         cacheProvider: BlogCacheProvider,
-        sequlizeTransactionProvider: SequlizeTransactionProvider,
+        sequlizeTransactionProvider: SequlizeTransactionProvider
     ) 
     {
         super(blogRepository, genreService, cacheProvider);
@@ -125,25 +128,40 @@ export class BlogLifecycleService extends BlogService {
             await this.genreService.createGenre(newBlog.id, blog.genres);
         })
 
+
         const cacheKey: string = cacheKeys.blogs.blogById(newBlog.id);
+        const allBlogsCacheKey: string = cacheKeys.blogs.allBlogs();
         this.blogCacheProvider.setValue(cacheKey, newBlog);
+        this.blogCacheProvider.deleteValue(allBlogsCacheKey); // cached all blogs has expired data after creation new blog
         return newBlog || null
     };
 
 
 
     public async deleteBlog(blogId: number) {
-        const deletionResult: boolean = await this.blogRepository.deleteBlog(blogId);
+        let deletionResult: boolean = await this.blogRepository.deleteBlog(blogId);
         if (!deletionResult) {
             throw new BadRequestException(errorResponse.blog.blog_not_been_deleted)
         }
 
         const cacheKey: string = cacheKeys.blogs.blogById(blogId);
+        const allBlogsCacheKey: string = cacheKeys.blogs.allBlogs();
         this.blogCacheProvider.deleteValue(cacheKey);
+        this.blogCacheProvider.deleteValue(allBlogsCacheKey); // cached all blogs has expired data after deletion the blog
         return Boolean(deletionResult);
     };
 
+
+
+    public async deleteAllBlogsOfUser(userId: number) {
+        const userBlogs: Blog[] = await this.allBlogsOfUser(userId);
+        const deletedRecords = userBlogs.map(async (blog: Blog) => await this.deleteBlog(blog.id));
+        return deletedRecords.length == userBlogs.length;
+    }
+
 }
+
+
 
 
 
@@ -164,26 +182,29 @@ export class BlogGenreService extends BlogService {
 
 
 
-    public async allBlogsByGenre(genreTitle: BlogGenreTypes) {
+    public async blogsByGenre(genreTitle: BlogGenreTypes, options: {offset: number, limit: number}) {
         const isGenreValid: BlogGenreTypes = BlogGenreTypes[genreTitle];
         if (!isGenreValid) {
             throw new NotFoundException("invalid genre type");
         }
 
-        const blogsIds: number[] = await this.genreService.findBlogIdsByGenre(genreTitle);
-        let promiseBlogs: Promise<Blog>[] = blogsIds.map(async (blogId: number) => {
-            return this.blogRepository.getBlogById(blogId);
+        const blogsIds: number[] = await this.genreService.findBlogIdsByGenre(genreTitle, options);
+        let promiseBlogs: Promise<Blog>[] = blogsIds.map((blogId: number) => {
+            return this.getBlogById(blogId);
         })
-        return Promise.all(promiseBlogs);
+        const blogs: Blog[] = await Promise.all(promiseBlogs);
+        return blogs;
     }
 
 
-    public async findRelatedBlogs(genre: BlogGenreTypes) {
+    public async findRelatedBlogs(genre: BlogGenreTypes, options: {offset: number, limit: number}) {
         const isGenreValid: BlogGenreTypes = BlogGenreTypes[genre];
         if (!isGenreValid) {
             throw new NotFoundException("invalid genre type");
         }
-        return this.genreService;
+        const relatedBlogIds = await this.genreService.findRelatedByGenreBlogs(genre, options);
+        const promiseBlogs: Promise<Blog>[] = relatedBlogIds.map(async (id: number) => await this.getBlogById(id));
+        return Promise.all(promiseBlogs);
     }
 
 
@@ -195,12 +216,4 @@ export class BlogGenreService extends BlogService {
         return this.genreService.removeGenreFromBlog(blogId, genreTitle);
     }
 
-
-    public async deleteBlogRelatedGenres(blogId: number) {
-        const isBlogExist: Blog = await this.getBlogById(blogId);
-        if (!isBlogExist) {
-            throw new NotFoundException("blog not found");
-        }
-        return this.genreService.deleteBlogRelatedRecords(blogId);
-    }
 }

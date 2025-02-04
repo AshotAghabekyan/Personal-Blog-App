@@ -17,15 +17,16 @@ export class Reaction extends Model<Reaction, ReactionCreationAttrs> {
     public id: number;
 
     @ForeignKey(() => Blog)
+    @Column
     public blogId: number;
 
-    @BelongsTo(() => Blog, "blogId")
+    @BelongsTo(() => Blog, { onDelete: 'CASCADE' })
     public blog: Blog
 
     @ForeignKey(() => User)
     public userId: number;
 
-    @BelongsTo(() => User, "userId")
+    @BelongsTo(() => User, { onDelete: 'CASCADE' })
     public user: User
 
 }

@@ -6,10 +6,12 @@ import { UserCacheProvider } from "./user.cacheProvider"
 import { User } from "./model/user.model";
 import { CreateUserDto } from "./model/user.dto";
 
-import { BadRequestException, NotFoundException } from "@nestjs/common";
+import { BadRequestException, InternalServerErrorException, NotFoundException } from "@nestjs/common";
 import errorResponse from "src/config/errorResponse";
 import cacheKeys from "src/config/cacheKeys";
 import { HashGenerator } from "src/utils/crypto/crypto";
+import { BlogLifecycleService } from "../blog/blog.service";
+import { SequlizeTransactionProvider } from "../globals/sequlizeTransaction/transaction.provider";
 
 
 
@@ -96,10 +98,20 @@ export class UserService {
 
 
 
-export class UserLifecycleService  extends UserService {
 
-    constructor(userRepository: UserRepository, userCacheProvider: UserCacheProvider) {
+
+
+@Injectable()
+export class UserLifecycleService  extends UserService {
+    private readonly transactionProvider: SequlizeTransactionProvider
+
+    constructor(
+        userRepository: UserRepository,
+        userCacheProvider: UserCacheProvider,
+        transactionProvider: SequlizeTransactionProvider,
+    ) {
         super(userRepository, userCacheProvider);
+        this.transactionProvider = transactionProvider;
     }
 
 
@@ -124,9 +136,16 @@ export class UserLifecycleService  extends UserService {
             throw new NotFoundException(errorResponse.user.user_not_found);
         }
 
-        const isDeleted = await this.userRepository.deleteUser(user.id);
+        let isUserDeleted: boolean = await this.userRepository.deleteUser(user.id);
+
+        if (!isUserDeleted) {
+            throw new InternalServerErrorException("user not deleted");
+        }
+
         const cacheKey: string = cacheKeys.users.userById(user.id);
+        const allCachedUsersKey: string = cacheKeys.users.allUsers();
+        this.userCacheProvider.deleteValue(allCachedUsersKey);
         this.userCacheProvider.deleteValue(cacheKey);
-        return Boolean(isDeleted);
+        return true;
     }
 }

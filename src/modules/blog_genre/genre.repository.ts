@@ -1,5 +1,4 @@
 import { Injectable } from "@nestjs/common";
-import { Blog } from "../blog/model/blog.model";
 import { BlogGenre } from "./models/blogGenre.model";
 import { InjectModel } from "@nestjs/sequelize";
 import { BlogGenreTypes } from "./models/genre.types";
@@ -8,7 +7,7 @@ import { BlogGenreDto } from "./models/blogGenre.dto";
 
 
 interface RepositoryI {
-    findBlogsByGenre(genreId: string): Promise<BlogGenre[]>;
+    findBlogsByGenre(genreId: string, options: {offset: number, limit: number}): Promise<BlogGenre[]>;
     createBlogGenre(dto: BlogGenreDto): Promise<boolean>;
     deleteBlogRelatedRecords(blogId: number): Promise<boolean>;
     removeGenreFromBlog(blogId: number, genreTitle: BlogGenreTypes): Promise<boolean>
@@ -28,7 +27,7 @@ export class GenreRepository implements RepositoryI {
         try {
             let promiseBlogGenre: Promise<BlogGenre>[] = [];
             for (let genre of dto.genres) {
-                const promise: Promise<BlogGenre> = this.blogGenreModel.create({blogId: dto.blogId, genre})
+                const promise: Promise<BlogGenre> = this.blogGenreModel.create({blogId: dto.blogId, genre});
                 promiseBlogGenre.push(promise);
             }
     
@@ -66,12 +65,16 @@ export class GenreRepository implements RepositoryI {
     }
 
 
-    public async findBlogsByGenre(genreTitle: BlogGenreTypes): Promise<BlogGenre[]> {
+    public async findBlogsByGenre(genreTitle: string, options: {offset: number, limit: number}): Promise<BlogGenre[]> {
         try {
             const records: BlogGenre[] = await this.blogGenreModel.findAll({
                 "where": {
-                    genre: genreTitle,
-                }
+                    genre: genreTitle,                    
+                },
+                offset: options.offset,
+                limit: options.limit,
+                
+                
             });
     
             return records || null;

@@ -24,7 +24,7 @@ export class Blog extends Model<Blog, BlogCreationAttributes> {
     @ForeignKey(() => User)
     public publisherId: number;
 
-    @BelongsTo(() => User, 'publisherId')
+    @BelongsTo(() => User, { onDelete: 'CASCADE' })
     public user: User
 
     @Column
@@ -37,9 +37,9 @@ export class Blog extends Model<Blog, BlogCreationAttributes> {
     public publishedDate: Date = new Date();
 
 
-    @HasMany(() => BlogGenre)
+    @HasMany(() => BlogGenre, { onDelete: 'CASCADE', hooks: true })
     public genres: BlogGenre[]
 
-    @HasMany(() => Reaction)
+    @HasMany(() => Reaction, { onDelete: 'CASCADE', hooks: true })
     public reactions: Reaction[]
 }

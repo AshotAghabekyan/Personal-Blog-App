@@ -71,7 +71,11 @@ export class UserRepository implements RepositoryI {
             return null;
         }
 
-        const isDeleted = await this.userModel.destroy<User>({where: { id: userId }});
+        const isDeleted = await this.userModel.destroy<User>({
+            where: { id: userId },
+            cascade: true,
+            truncate: true,
+        });
         return Boolean(isDeleted);
     }
 

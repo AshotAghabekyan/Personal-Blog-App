@@ -10,10 +10,14 @@ import { RedisConfigService } from "src/modules/globals/redis/redis.config";
 import { ConfigService } from "@nestjs/config";
 import { UserRepository } from "./user.repository";
 import { UserCacheProvider } from "./user.cacheProvider";
+import { BlogModule } from "../blog/blog.module";
+import { BlogLifecycleService } from "../blog/blog.service";
+import { BlogRepository } from "../blog/blog.repository";
 
 
 @Module({
     imports: [
+        BlogModule,
         SequelizeModule.forFeature([User]),
         JwtModule, 
         CacheModule.registerAsync({
@@ -26,7 +30,12 @@ import { UserCacheProvider } from "./user.cacheProvider";
     ],
     exports: [UserService],
     controllers: [UserController],
-    providers: [UserService, UserLifecycleService, UserRepository, UserCacheProvider]
+    providers: [
+        UserService,
+        UserLifecycleService,
+        UserRepository,
+        UserCacheProvider,
+    ]
 })
 
 export class UserModule {};

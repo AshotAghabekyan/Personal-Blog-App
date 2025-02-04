@@ -28,9 +28,9 @@ export class User extends Model<User, CreateUserDto> {
     @Column
     public username: string;
 
-    @HasMany(() => Blog)
+    @HasMany(() => Blog, { onDelete: 'CASCADE', hooks: true })
     public blogs: Blog[]
 
-    @HasMany(() => Reaction)
+    @HasMany(() => Reaction, { onDelete: 'CASCADE', hooks: true })
     public reactions: Reaction[]
 }

@@ -35,12 +35,12 @@ export class BlogRepository implements RepositoryI {
             console.error(error);
             return null;
         }
-    };
-
+    }
+    
 
     public async getBlogById(blogId: number) {
         try {
-            const targetBlog: Blog = await this.blogModel.findByPk(blogId, {include: [User, Reaction]});
+            const targetBlog: Blog = await this.blogModel.findByPk(blogId, {include: [User, Reaction, {model: BlogGenre, as: "genres"}]});
             return targetBlog || null; 
         }
         catch(error) {
@@ -52,7 +52,7 @@ export class BlogRepository implements RepositoryI {
 
     public async allBlogsOfUser(userId: number) {
         try {
-            const blogsOfUser: Blog[] = await this.blogModel.findAll({where: {"publisherId": userId}, include: [Reaction]});
+            const blogsOfUser: Blog[] = await this.blogModel.findAll({where: {"publisherId": userId}, include: [Reaction, BlogGenre]});
             if (blogsOfUser.length == 0) {
                 return null;
             }
@@ -68,7 +68,7 @@ export class BlogRepository implements RepositoryI {
 
     public async allBlogs() {
         try {
-            const allBlogs: Blog[] = await this.blogModel.findAll({include: [User, Reaction]});
+            const allBlogs: Blog[] = await this.blogModel.findAll({include: [User, Reaction, BlogGenre]});
             if (allBlogs.length == 0) {
                 return null;
             }
@@ -84,7 +84,10 @@ export class BlogRepository implements RepositoryI {
 
     public async deleteBlog(blogId: number) {
         try {
-            const deletionResult: number = await this.blogModel.destroy({"where": {"id": blogId}});
+            const deletionResult: number = await this.blogModel.destroy({
+                "where": {"id": blogId},
+                // "cascade": true,
+            });
             return Boolean(deletionResult);
         }
         catch(error) {
@@ -92,4 +95,5 @@ export class BlogRepository implements RepositoryI {
             return false;
         }
     };
+    
 }

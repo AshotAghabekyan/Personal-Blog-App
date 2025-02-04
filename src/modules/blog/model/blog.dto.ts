@@ -3,6 +3,7 @@ import { Reaction } from "src/modules/reaction/model/reaction.model";
 import { Blog } from "./blog.model";
 import { ResponseUserDto } from "src/modules/user/model/user.dto";
 import { BlogGenreTypes } from "src/modules/blog_genre/models/genre.types";
+import { BlogGenre } from "src/modules/blog_genre/models/blogGenre.model";
 
 
 
@@ -26,7 +27,7 @@ export class ResponseBlogDto {
     likeCount: number;
     publisher?: ResponseUserDto;
     reactions?: Reaction[];
-    genres: BlogGenreTypes[];
+    genres: string[];
 
     constructor(blog: Blog) {
         this.id = blog.id;
@@ -38,7 +39,9 @@ export class ResponseBlogDto {
             this.publisher = new ResponseUserDto(blog.user);
         }
 
-        // this.genres = blog.genres;
+        if (blog.genres) {
+            this.genres = blog.genres.map((blogGenre: BlogGenre) => blogGenre.genre);
+        }
     }
 
 

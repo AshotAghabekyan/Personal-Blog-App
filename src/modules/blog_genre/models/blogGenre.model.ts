@@ -1,4 +1,4 @@
-import { Table, Model, Column, ForeignKey, AutoIncrement, PrimaryKey } from "sequelize-typescript";
+import { Table, Model, Column, ForeignKey, AutoIncrement, PrimaryKey, BelongsTo } from "sequelize-typescript";
 import { Blog } from "src/modules/blog/model/blog.model";
 
 
@@ -17,13 +17,14 @@ export class BlogGenre extends Model<BlogGenre, BlogGenreCreationAttrs> {
     @Column({ type: 'INTEGER' })
     public id: number;
 
-
     @ForeignKey(() => Blog)
     @Column
     blogId: number;
 
+    @BelongsTo(() => Blog, { onDelete: 'CASCADE' })
+    public blog: Blog
 
     @Column
-    genre: string;
+    public genre: string;
 }
 

@@ -1,6 +1,6 @@
 import { Controller } from "@nestjs/common/decorators/core/controller.decorator";
 import { UseGuards } from "@nestjs/common/decorators/core/use-guards.decorator";
-import { Body, Param, Req, Get, Post, HttpCode, Delete } from "@nestjs/common/decorators/http/";
+import { Body, Param, Req, Get, Post, HttpCode, Delete, Query } from "@nestjs/common/decorators/http/";
 import { HttpStatus } from "@nestjs/common/enums/http-status.enum";
 import { BlogGenreService, BlogLifecycleService, BlogService } from "./blog.service";
 import { AuthGuard } from "src/modules/auth/auth.guard";
@@ -35,8 +35,8 @@ export class BlogController {
     @UseGuards(AuthGuard)
     @HttpCode(HttpStatus.OK)
     @Delete("/:blogId")
-    public deleteBlog(@Param("blogId", ParseIntPipe) blogId: number) {
-        return this.blogLifecycleService.deleteBlog(blogId);
+    public async deleteBlog(@Param("blogId", ParseIntPipe) blogId: number) {
+        return await this.blogLifecycleService.deleteBlog(blogId);
     };
 
 
@@ -87,17 +87,34 @@ export class BlogGenreController {
 
     @UseGuards(AuthGuard)
     @HttpCode(HttpStatus.OK)
-    @Get("/:genre")
-    public async getBlogsByGenre(@Param("genre") genre: BlogGenreTypes) {
-        const blogs: Blog[] = await this.blogGenreService.allBlogsByGenre(genre);
+    @Get("/:genre?")
+    public async getBlogsByGenre(
+        @Param("genre") genre: BlogGenreTypes,
+        @Query('offset') offset: number,
+        @Query("limit") limit: number
+    ) {
+        const blogs: Blog[] = await this.blogGenreService.blogsByGenre(genre, {offset, limit});
         return blogs.map((blog: Blog) => new ResponseBlogDto(blog));
     }
 
 
     @UseGuards(AuthGuard)
     @HttpCode(HttpStatus.OK)
-    @Get("/recomendation")
-    public getRecomendatedBlogs() {
+    @Get("/related/:genre?")
+    public async getRelatedBlogs(
+        @Param("genre") genre: BlogGenreTypes,
+        @Query('offset') offset: number,
+        @Query("limit") limit: number,
+        @Query('deept') deept: number,
+    ) {
+        return await this.blogGenreService.findRelatedBlogs(genre, {offset, limit});
+    }
+
+
+    @UseGuards(AuthGuard)
+    @HttpCode(HttpStatus.OK)
+    @Get("/feed")
+    public feedBlogs() {
 
     }
 }

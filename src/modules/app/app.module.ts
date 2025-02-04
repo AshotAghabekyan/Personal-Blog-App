@@ -42,6 +42,7 @@ import { SequlizeTransactionModule } from '../globals/sequlizeTransaction/transa
         }
       },
     }),
+    
 
     SequelizeModule.forRootAsync({
       imports: [ConfigModule],
